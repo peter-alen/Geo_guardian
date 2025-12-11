@@ -22,7 +22,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({ onDestinationSelect }) => {
     };
 
     return (
-        <div className="bg-slate-900/90 backdrop-blur-md p-3 rounded-xl shadow-lg border border-slate-800 w-80 pointer-events-auto ring-1 ring-white/5">
+        <div className="bg-slate-900/90 backdrop-blur-md p-3 rounded-xl shadow-lg border border-slate-800 w-full md:w-80 pointer-events-auto ring-1 ring-white/5">
             <form onSubmit={handleSearch} className="flex gap-2">
                 <input
                     type="text"

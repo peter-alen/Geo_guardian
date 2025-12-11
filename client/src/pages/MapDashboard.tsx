@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import MapComponent from '../components/Map/MapComponent';
 import SearchBox from '../components/UI/SearchBox';
-import VehicleSelector from '../components/UI/VehicleSelector';
 import LayerToggles from '../components/UI/LayerToggles';
+import MapStyleSwitcher from '../components/UI/MapStyleSwitcher';
 import HazardLayers from '../components/Map/HazardLayers';
 import RoutingLayer from '../components/Map/RoutingLayer';
 import AlertBanner from '../components/UI/AlertBanner';
@@ -19,6 +19,7 @@ const MapDashboard: React.FC = () => {
         sharp_turn: true,
         restrictions: true
     });
+    const [mapStyle, setMapStyle] = useState('standard');
     const [routeSegments, setRouteSegments] = useState<any[]>([]);
     const [alertMessage, setAlertMessage] = useState<string | null>(null);
     const [hazards, setHazards] = useState<any[]>([]);
@@ -107,7 +108,7 @@ const MapDashboard: React.FC = () => {
 
     return (
         <div className="h-full w-full relative">
-            <MapComponent onLocationUpdate={handleLocationUpdate}>
+            <MapComponent onLocationUpdate={handleLocationUpdate} activeStyle={mapStyle}>
                 <HazardLayers hazards={hazards} visibleTypes={layers} />
                 <RoutingLayer segments={routeSegments} />
             </MapComponent>
@@ -115,19 +116,23 @@ const MapDashboard: React.FC = () => {
             {alertMessage && <AlertBanner message={alertMessage} type="warning" onClose={() => setAlertMessage(null)} />}
 
             {/* Top Left - Search */}
-            <div className="absolute top-4 left-14 z-[400]">
+            <div className="absolute top-4 left-4 right-4 md:left-14 md:right-auto md:w-auto z-[400]">
                 <SearchBox onDestinationSelect={handleDestinationSelect} />
             </div>
 
-            {/* Top Right - Vehicle & AQI */}
-            <div className="absolute top-4 right-4 z-[400] flex flex-col gap-2">
-                <VehicleSelector />
+            {/* Top Right - AQI */}
+            <div className="absolute top-20 right-4 md:top-4 md:right-4 z-[400] flex flex-col gap-2">
                 <AQIWidget />
             </div>
 
             {/* Bottom Right - Layer Toggles */}
-            <div className="absolute bottom-8 right-4 z-[400]">
+            <div className="absolute bottom-20 right-4 md:bottom-8 md:right-4 z-[400]">
                 <LayerToggles toggles={layers} onToggleConfig={handleToggle} />
+            </div>
+
+            {/* Bottom Left - Map Style Switcher */}
+            <div className="absolute bottom-4 left-4 md:bottom-8 md:left-4 z-[400]">
+                <MapStyleSwitcher currentStyle={mapStyle} onStyleChange={setMapStyle} />
             </div>
         </div>
     );
