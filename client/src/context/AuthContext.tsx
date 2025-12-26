@@ -1,4 +1,5 @@
-import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import type { ReactNode } from 'react';
 
 // Define User type on frontend
 export interface User {
@@ -13,6 +14,7 @@ interface AuthContextType {
     user: User | null;
     login: (user: User) => void;
     logout: () => void;
+    updateUser: (updates: Partial<User>) => void;
     isAuthenticated: boolean;
 }
 
@@ -38,8 +40,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.removeItem('geo_user');
     };
 
+    const updateUser = (updates: Partial<User>) => {
+        if (!user) return;
+        const updatedUser = { ...user, ...updates };
+        setUser(updatedUser);
+        localStorage.setItem('geo_user', JSON.stringify(updatedUser));
+    };
+
     return (
-        <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user }}>
+        <AuthContext.Provider value={{ user, login, logout, updateUser, isAuthenticated: !!user }}>
             {children}
         </AuthContext.Provider>
     );

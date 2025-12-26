@@ -8,22 +8,26 @@ import HazardLayers from '../components/Map/HazardLayers';
 import RoutingLayer from '../components/Map/RoutingLayer';
 import AlertBanner from '../components/UI/AlertBanner';
 import AQIWidget from '../components/UI/AQIWidget';
+import VehicleSelector from '../components/UI/VehicleSelector';
+import LaneGuidance from '../components/UI/LaneGuidance';
 import { useAuth } from '../context/AuthContext';
+import { useMapContext } from '../context/MapContext';
 
 const MapDashboard: React.FC = () => {
     const { user } = useAuth();
+    const { userLocation, setDestination } = useMapContext();
     const [layers, setLayers] = useState({
         school_zone: true,
         hospital_zone: true,
         speed_breaker: true,
         sharp_turn: true,
-        restrictions: true
+        restrictions: true,
+        traffic: false
     });
     const [mapStyle, setMapStyle] = useState('standard');
     const [routeSegments, setRouteSegments] = useState<any[]>([]);
     const [alertMessage, setAlertMessage] = useState<string | null>(null);
     const [hazards, setHazards] = useState<any[]>([]);
-    const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
 
     useEffect(() => {
         // Fetch hazards
@@ -32,10 +36,11 @@ const MapDashboard: React.FC = () => {
             .catch(err => console.error(err));
     }, []);
 
-    const handleLocationUpdate = (lat: number, lng: number) => {
-        setUserLocation({ lat, lng });
-        checkProximity(lat, lng);
-    };
+    useEffect(() => {
+        if (userLocation) {
+            checkProximity(userLocation.lat, userLocation.lng);
+        }
+    }, [userLocation]);
 
     const checkProximity = (lat: number, lng: number) => {
         if (!hazards.length) return;
@@ -84,8 +89,10 @@ const MapDashboard: React.FC = () => {
 
     const handleDestinationSelect = async (lat: number, lng: number, name: string) => {
         console.log('Selected destination:', lat, lng, name);
+        setDestination({ lat, lng });
+
         // Mock Start as current userLocation if available, else deafult
-        const start = userLocation ? userLocation : { lat: 51.505, lng: -0.09 };
+        const start = userLocation ? { lat: userLocation.lat, lng: userLocation.lng } : { lat: 51.505, lng: -0.09 };
         const end = { lat, lng };
 
         try {
@@ -108,7 +115,7 @@ const MapDashboard: React.FC = () => {
 
     return (
         <div className="h-full w-full relative">
-            <MapComponent onLocationUpdate={handleLocationUpdate} activeStyle={mapStyle}>
+            <MapComponent activeStyle={mapStyle} showTraffic={layers.traffic}>
                 <HazardLayers hazards={hazards} visibleTypes={layers} />
                 <RoutingLayer segments={routeSegments} />
             </MapComponent>
@@ -125,8 +132,12 @@ const MapDashboard: React.FC = () => {
                 <AQIWidget />
             </div>
 
+            {/* Lane Guidance Overlay - Mocked to show when route is active */}
+            <LaneGuidance visible={routeSegments.length > 0} />
+
             {/* Bottom Right - Layer Toggles */}
-            <div className="absolute bottom-20 right-4 md:bottom-8 md:right-4 z-[400]">
+            <div className="absolute bottom-20 right-4 md:bottom-8 md:right-4 z-[400] flex flex-col gap-4 items-end">
+                <VehicleSelector />
                 <LayerToggles toggles={layers} onToggleConfig={handleToggle} />
             </div>
 
@@ -139,3 +150,4 @@ const MapDashboard: React.FC = () => {
 };
 
 export default MapDashboard;
+

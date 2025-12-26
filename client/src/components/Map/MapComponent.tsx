@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import React from 'react';
+import { MapContainer, TileLayer } from 'react-leaflet';
 import L, { type LatLngExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -7,6 +7,7 @@ import 'leaflet/dist/leaflet.css';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import LocateControl from './LocateControl';
+import UserMarker from './UserMarker';
 
 let DefaultIcon = L.icon({
     iconUrl: icon,
@@ -17,31 +18,14 @@ let DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
-const LocationMarker: React.FC<{ onLocationUpdate?: (lat: number, lng: number) => void }> = ({ onLocationUpdate }) => {
-    const [position, setPosition] = useState<LatLngExpression | null>(null);
-    const map = useMap();
 
-    useEffect(() => {
-        map.locate().on("locationfound", function (e) {
-            setPosition(e.latlng);
-            map.flyTo(e.latlng, map.getZoom());
-            if (onLocationUpdate) onLocationUpdate(e.latlng.lat, e.latlng.lng);
-        });
-    }, [map, onLocationUpdate]);
-
-    return position === null ? null : (
-        <Marker position={position}>
-            <Popup>You are here</Popup>
-        </Marker>
-    );
-};
 
 const MapComponent: React.FC<{
     children?: React.ReactNode;
-    onLocationUpdate?: (lat: number, lng: number) => void;
     activeStyle?: string;
-}> = ({ children, onLocationUpdate, activeStyle = 'standard' }) => {
-    // Default position: London
+    showTraffic?: boolean;
+}> = ({ children, activeStyle = 'standard', showTraffic = false }) => {
+    // Default position: London (or User's last known) - this could be dynamic
     const defaultPosition: LatLngExpression = [51.505, -0.09];
 
     return (
@@ -50,22 +34,26 @@ const MapComponent: React.FC<{
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    maxZoom={19}
                 />
             )}
             {activeStyle === 'satellite' && (
                 <TileLayer
-                    attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-                    url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                />
-            )}
-            {activeStyle === 'detailed' && (
-                <TileLayer
-                    attribution='Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012'
-                    url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
+                    attribution='&copy; Google Maps'
+                    url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+                    maxZoom={20}
                 />
             )}
 
-            <LocationMarker onLocationUpdate={onLocationUpdate} />
+            {showTraffic && (
+                <TileLayer
+                    url="https://mt1.google.com/vt/lyrs=h,traffic&x={x}&y={y}&z={z}"
+                    maxZoom={20}
+                    opacity={0.7}
+                />
+            )}
+
+            <UserMarker />
             <LocateControl />
             {children}
         </MapContainer>

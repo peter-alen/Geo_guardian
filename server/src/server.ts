@@ -41,6 +41,7 @@ mongoose.connect(MONGODB_URI)
 app.use('/api/auth', authRoutes);
 app.use('/api/hazards', hazardRoutes);
 app.use('/api/restrictions', restrictionRoutes);
+
 app.use('/api/route', routingRoutes);
 app.use('/api/air-quality', aqiRoutes);
 

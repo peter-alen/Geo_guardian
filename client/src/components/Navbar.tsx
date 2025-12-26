@@ -10,8 +10,7 @@ import {
     LogOut,
     Settings,
     MoreVertical,
-    User,
-    ChevronDown
+    User
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';

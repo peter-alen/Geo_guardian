@@ -1,6 +1,6 @@
 import createGlobe from 'cobe';
 import { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+
 
 const GlobeBackground = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);

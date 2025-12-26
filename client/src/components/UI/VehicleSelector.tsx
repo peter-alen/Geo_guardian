@@ -1,63 +1,55 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { Car, Truck, Ambulance } from 'lucide-react';
 
 const VehicleSelector: React.FC = () => {
-    const { user, login } = useAuth();
-    const [isOpen, setIsOpen] = React.useState(false);
-
-    // Close when clicking outside
-    React.useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            const target = event.target as HTMLElement;
-            if (isOpen && !target.closest('.vehicle-selector-container')) {
-                setIsOpen(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [isOpen]);
+    const { user, updateUser } = useAuth();
+    const [isOpen, setIsOpen] = useState(false);
 
     if (!user) return null;
 
-    const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const newType = e.target.value as any;
-        login({ ...user, vehicleType: newType });
-        setIsOpen(false);
-    };
+    const vehicleTypes = [
+        { id: 'car', label: 'Car', icon: Car },
+        { id: 'heavy', label: 'Heavy Vehicle', icon: Truck },
+        { id: 'emergency', label: 'Emergency', icon: Ambulance },
+    ] as const;
 
-    if (!isOpen) {
-        return (
-            <button
-                onClick={() => setIsOpen(true)}
-                className="vehicle-selector-container bg-slate-900/90 backdrop-blur-md p-3 rounded-full shadow-lg border border-slate-800 pointer-events-auto ring-1 ring-white/5 hover:bg-slate-800 transition-colors"
-                title="Change Vehicle Mode"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-300">
-                    <rect x="1" y="3" width="15" height="13"></rect>
-                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
-                    <circle cx="5.5" cy="18.5" r="2.5"></circle>
-                    <circle cx="18.5" cy="18.5" r="2.5"></circle>
-                </svg>
-            </button>
-        );
-    }
+    const currentVehicle = vehicleTypes.find(v => v.id === user.vehicleType) || vehicleTypes[0];
 
     return (
-        <div className="vehicle-selector-container bg-slate-900/90 backdrop-blur-md p-3 rounded-xl shadow-lg border border-slate-800 pointer-events-auto ring-1 ring-white/5 animate-in fade-in zoom-in duration-200 origin-top-right min-w-[180px]">
-            <span className="text-[10px] font-bold text-slate-400 block mb-1.5 uppercase tracking-wider">Vehicle Mode</span>
-            <select
-                value={user.vehicleType}
-                onChange={handleChange}
-                className="w-full text-sm bg-slate-800 border-slate-700 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 text-slate-200 p-1.5"
-                size={3}
+        <div className="relative group">
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="bg-slate-900/90 backdrop-blur-md p-3 rounded-full shadow-lg border border-slate-800 pointer-events-auto ring-1 ring-white/5 hover:bg-slate-800 transition-all flex items-center justify-center text-slate-300 hover:text-emerald-400 w-12 h-12"
+                title="Select Vehicle Type"
             >
-                <option value="car">Car</option>
-                <option value="heavy">Heavy Vehicle</option>
-                <option value="emergency">Emergency Vehicle</option>
-            </select>
+                <currentVehicle.icon size={20} />
+            </button>
+
+            {/* Dropdown / Tooltip-like selection */}
+            {isOpen && (
+                <div className="absolute bottom-16 right-0 bg-slate-900/95 backdrop-blur-xl border border-slate-700 p-2 rounded-xl shadow-2xl flex flex-col gap-1 min-w-[160px] animate-in slide-in-from-bottom-2 fade-in duration-200">
+                    <div className="px-2 py-1 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                        Vehicle Mode
+                    </div>
+                    {vehicleTypes.map((v) => (
+                        <button
+                            key={v.id}
+                            onClick={() => {
+                                updateUser({ vehicleType: v.id });
+                                setIsOpen(false);
+                            }}
+                            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${user.vehicleType === v.id
+                                    ? 'bg-emerald-500/20 text-emerald-400'
+                                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                }`}
+                        >
+                            <v.icon size={16} />
+                            <span>{v.label}</span>
+                        </button>
+                    ))}
+                </div>
+            )}
         </div>
     );
 };

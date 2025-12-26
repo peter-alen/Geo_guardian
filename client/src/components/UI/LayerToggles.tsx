@@ -28,7 +28,8 @@ const LayerToggles: React.FC<LayerTogglesProps> = ({ toggles, onToggleConfig }) 
         hospital_zone: 'Hospitals',
         speed_breaker: 'Speed Breakers',
         sharp_turn: 'Sharp Turns',
-        restrictions: 'Road Restrictions'
+        restrictions: 'Road Restrictions',
+        traffic: 'Live Traffic'
     };
 
     if (!isOpen) {

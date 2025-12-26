@@ -1,8 +1,7 @@
-import { motion } from 'framer-motion';
-import { clsx } from 'clsx';
+import { motion, type HTMLMotionProps } from 'framer-motion';
 import { twMerge } from 'tailwind-merge';
 
-interface NeonButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface NeonButtonProps extends HTMLMotionProps<'button'> {
     variant?: 'primary' | 'secondary' | 'danger';
     isLoading?: boolean;
     glow?: boolean;

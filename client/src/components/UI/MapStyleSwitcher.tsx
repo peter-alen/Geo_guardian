@@ -1,70 +1,68 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Layers, Map as MapIcon, Satellite } from 'lucide-react';
+import { clsx } from 'clsx';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface MapStyleSwitcherProps {
     currentStyle: string;
     onStyleChange: (style: string) => void;
 }
 
+const styles = [
+    { id: 'standard', label: 'Map', icon: MapIcon },
+    { id: 'satellite', label: 'Satellite', icon: Satellite },
+];
+
 const MapStyleSwitcher: React.FC<MapStyleSwitcherProps> = ({ currentStyle, onStyleChange }) => {
-    const [isOpen, setIsOpen] = React.useState(false);
+    const [isOpen, setIsOpen] = useState(false);
 
-    // Close when clicking outside
-    React.useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            const target = event.target as HTMLElement;
-            if (isOpen && !target.closest('.map-style-switcher-container')) {
-                setIsOpen(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [isOpen]);
-
-    const styles = [
-        { id: 'standard', label: 'Standard' },
-        { id: 'satellite', label: 'Satellite' },
-        { id: 'detailed', label: 'Detailed' }
-    ];
-
-    if (!isOpen) {
-        return (
-            <button
-                onClick={() => setIsOpen(true)}
-                className="map-style-switcher-container bg-slate-900/90 backdrop-blur-md p-3 rounded-full shadow-lg border border-slate-800 pointer-events-auto ring-1 ring-white/5 hover:bg-slate-800 transition-colors"
-                title="Change Map Style"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-300">
-                    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
-                    <line x1="8" y1="2" x2="8" y2="18"></line>
-                    <line x1="16" y1="6" x2="16" y2="22"></line>
-                </svg>
-            </button>
-        );
-    }
+    // Close when clicking outside logic embedded in backdrop if needed, 
+    // but for simple dropdown, we can use a click handler on the container or similar.
+    // For now, simple toggle is fine.
 
     return (
-        <div className="map-style-switcher-container bg-slate-900/90 backdrop-blur-md p-2 rounded-xl shadow-lg border border-slate-800 pointer-events-auto ring-1 ring-white/5 flex gap-2 animate-in fade-in slide-in-from-left-4 duration-200">
-            {styles.map((style) => (
-                <button
-                    key={style.id}
-                    onClick={() => {
-                        onStyleChange(style.id);
-                        setIsOpen(false);
-                    }}
-                    className={`
-                        px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap
-                        ${currentStyle === style.id
-                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-transparent'
-                        }
-                    `}
-                >
-                    {style.label}
-                </button>
-            ))}
+        <div className="relative group p-2">
+            <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setIsOpen(!isOpen)}
+                className="bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 p-3 rounded-full shadow-[0_0_15px_rgba(6,182,212,0.3)] text-cyan-400 hover:text-cyan-300 hover:bg-slate-800 transition-all z-20 relative"
+                title="Change Map Style"
+            >
+                <Layers className="w-6 h-6" />
+            </motion.button>
+
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        initial={{ opacity: 0, x: -20, scale: 0.9 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        exit={{ opacity: 0, x: -20, scale: 0.9 }}
+                        className="absolute bottom-16 left-0 bg-slate-900/90 backdrop-blur-xl border border-slate-700 p-2 rounded-2xl shadow-2xl w-48 z-10"
+                    >
+                        <div className="space-y-1">
+                            {styles.map((style) => (
+                                <button
+                                    key={style.id}
+                                    onClick={() => {
+                                        onStyleChange(style.id);
+                                        setIsOpen(false);
+                                    }}
+                                    className={clsx(
+                                        "w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all font-orbitron tracking-wide",
+                                        currentStyle === style.id
+                                            ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 shadow-[0_0_10px_rgba(34,211,238,0.2)]"
+                                            : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                                    )}
+                                >
+                                    <style.icon className="w-4 h-4" />
+                                    {style.label}
+                                </button>
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

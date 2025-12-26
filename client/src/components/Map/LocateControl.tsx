@@ -8,7 +8,7 @@ const LocateControl: React.FC = () => {
         // Prevent event propagation to map click handlers
         e.stopPropagation();
 
-        map.locate({ setView: true, maxZoom: 16 });
+        map.locate({ setView: true, maxZoom: 16, enableHighAccuracy: true });
     };
 
     return (
