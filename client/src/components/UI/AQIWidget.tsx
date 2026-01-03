@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useMapContext } from '../../context/MapContext';
 
 interface AQIData {
     aqi: number;
@@ -8,6 +9,7 @@ interface AQIData {
 }
 
 const AQIWidget: React.FC = () => {
+    const { userLocation } = useMapContext();
     const [data, setData] = useState<AQIData | null>(null);
     const [isExpanded, setIsExpanded] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
@@ -26,11 +28,13 @@ const AQIWidget: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        // Mock fetch for current location (e.g., London)
-        axios.get('http://localhost:5000/api/air-quality?lat=51.5&lng=-0.09')
+        if (!userLocation) return;
+
+        // Fetch for current location
+        axios.get(`http://localhost:5000/api/air-quality?lat=${userLocation.lat}&lng=${userLocation.lng}`)
             .then(res => setData(res.data))
             .catch(err => console.error(err));
-    }, []);
+    }, [userLocation]);
 
     // Close when clicking outside on mobile
     useEffect(() => {
