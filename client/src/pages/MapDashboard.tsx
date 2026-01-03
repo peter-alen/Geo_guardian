@@ -6,6 +6,7 @@ import LayerToggles from '../components/UI/LayerToggles';
 import MapStyleSwitcher from '../components/UI/MapStyleSwitcher';
 import HazardLayers from '../components/Map/HazardLayers';
 import RoutingLayer from '../components/Map/RoutingLayer';
+import NavigationOverlay from '../components/Map/NavigationOverlay';
 import AlertBanner from '../components/UI/AlertBanner';
 import AQIWidget from '../components/UI/AQIWidget';
 import VehicleSelector from '../components/UI/VehicleSelector';
@@ -15,7 +16,7 @@ import { useMapContext } from '../context/MapContext';
 
 const MapDashboard: React.FC = () => {
     const { user } = useAuth();
-    const { userLocation, setDestination } = useMapContext();
+    const { userLocation, destination, setDestination } = useMapContext();
     const [layers, setLayers] = useState({
         school_zone: true,
         hospital_zone: true,
@@ -28,6 +29,13 @@ const MapDashboard: React.FC = () => {
     const [routeSegments, setRouteSegments] = useState<any[]>([]);
     const [alertMessage, setAlertMessage] = useState<string | null>(null);
     const [hazards, setHazards] = useState<any[]>([]);
+    const [isNavigating, setIsNavigating] = useState(false);
+
+    // Navigation Stats
+    const [navStats, setNavStats] = useState({
+        distance: 0, // km
+        duration: 0  // min
+    });
 
     useEffect(() => {
         // Fetch hazards
@@ -39,8 +47,18 @@ const MapDashboard: React.FC = () => {
     useEffect(() => {
         if (userLocation) {
             checkProximity(userLocation.lat, userLocation.lng);
+
+            if (isNavigating && destination) {
+                const dist = getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, destination.lat, destination.lng);
+                // Estimate time: assume 40km/h average speed
+                const time = (dist / 40) * 60;
+                setNavStats({
+                    distance: dist,
+                    duration: Math.ceil(time)
+                });
+            }
         }
-    }, [userLocation]);
+    }, [userLocation, isNavigating, destination]);
 
     const checkProximity = (lat: number, lng: number) => {
         if (!hazards.length) return;
@@ -145,6 +163,30 @@ const MapDashboard: React.FC = () => {
             <div className="absolute bottom-4 left-4 md:bottom-8 md:left-4 z-[400]">
                 <MapStyleSwitcher currentStyle={mapStyle} onStyleChange={setMapStyle} />
             </div>
+
+            {/* Start Navigation Button */}
+            {routeSegments.length > 0 && !isNavigating && (
+                <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-[400]">
+                    <button
+                        onClick={() => setIsNavigating(true)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 flex items-center gap-2"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                        </svg>
+                        Start Navigation
+                    </button>
+                </div>
+            )}
+
+            {/* Navigation Overlay */}
+            {isNavigating && (
+                <NavigationOverlay
+                    distanceKm={navStats.distance}
+                    durationMin={navStats.duration}
+                    onExit={() => setIsNavigating(false)}
+                />
+            )}
         </div>
     );
 };
