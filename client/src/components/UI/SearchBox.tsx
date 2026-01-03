@@ -10,22 +10,44 @@ const SearchBox: React.FC<SearchBoxProps> = ({ onDestinationSelect }) => {
     const [results, setResults] = useState<any[]>([]);
     const [isFocused, setIsFocused] = useState(false);
 
-    const handleSearch = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!query) return;
+    const handleSearch = async (val: string) => {
+        if (!val || val.length < 3) {
+            setResults([]);
+            return;
+        }
 
         try {
-            const res = await axios.get(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+            // Use backend proxy to avoid CORS and add User-Agent
+            const res = await axios.get(`http://localhost:5000/api/search?q=${encodeURIComponent(val)}`);
             setResults(res.data);
         } catch (error) {
             console.error(error);
         }
     };
 
+    // Debounce search effect
+    React.useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            if (query.length >= 3) {
+                handleSearch(query);
+            } else {
+                setResults([]);
+            }
+        }, 800); // 800ms debounce to be kind to Nominatim API
+
+        return () => clearTimeout(timeoutId);
+    }, [query]);
+
+    // Manual submit handler
+    const onSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        handleSearch(query);
+    };
+
     return (
         <div className="bg-slate-950/80 backdrop-blur-xl p-4 rounded-2xl shadow-[0_0_20px_rgba(173,216,230,0.15)] border border-blue-300/30 w-full md:w-96 pointer-events-auto ring-1 ring-blue-300/20 transition-all duration-300 hover:shadow-[0_0_30px_rgba(173,216,230,0.25)] hover:border-blue-300/50
 ">
-            <form onSubmit={handleSearch} className="flex gap-3 relative">
+            <form onSubmit={onSubmit} className="flex gap-3 relative">
                 <div className={`relative flex-1 transition-all duration-300 rounded-xl ${isFocused ? 'ring-2 ring-blue-300/50 shadow-[0_0_15px_rgba(173,216,230,0.3)]' : ''}`}>
                     <input
                         type="text"

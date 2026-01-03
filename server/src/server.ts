@@ -9,6 +9,7 @@ import hazardRoutes from './routes/hazards';
 import restrictionRoutes from './routes/restrictions';
 import routingRoutes from './routes/routing';
 import aqiRoutes from './routes/aqi';
+import searchRoutes from './routes/search';
 
 dotenv.config();
 
@@ -44,6 +45,7 @@ app.use('/api/restrictions', restrictionRoutes);
 
 app.use('/api/route', routingRoutes);
 app.use('/api/air-quality', aqiRoutes);
+app.use('/api/search', searchRoutes);
 
 app.get('/', (req, res) => {
     res.send('GeoGuardian API is running');
