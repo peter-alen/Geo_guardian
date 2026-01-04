@@ -13,10 +13,12 @@ import VehicleSelector from '../components/UI/VehicleSelector';
 import LaneGuidance from '../components/UI/LaneGuidance';
 import { useAuth } from '../context/AuthContext';
 import { useMapContext } from '../context/MapContext';
+import useHazardAlerts from '../hooks/useHazardAlerts';
+import useNavigationLogic from '../hooks/useNavigationLogic';
 
 const MapDashboard: React.FC = () => {
     const { user } = useAuth();
-    const { userLocation, destination, setDestination } = useMapContext();
+    const { userLocation, destination, setDestination, isNavigating, setIsNavigating, followMode, setFollowMode } = useMapContext();
     const [layers, setLayers] = useState({
         school_zone: true,
         hospital_zone: true,
@@ -29,12 +31,27 @@ const MapDashboard: React.FC = () => {
     const [routeSegments, setRouteSegments] = useState<any[]>([]);
     const [alertMessage, setAlertMessage] = useState<string | null>(null);
     const [hazards, setHazards] = useState<any[]>([]);
-    const [isNavigating, setIsNavigating] = useState(false);
-
     // Navigation Stats
     const [navStats, setNavStats] = useState({
         distance: 0, // km
         duration: 0  // min
+    });
+
+    // Hooks
+    useHazardAlerts({
+        hazards,
+        onAlert: (msg) => {
+            setAlertMessage(msg);
+            speak(msg);
+        }
+    });
+
+    useNavigationLogic({
+        routeSegments,
+        onInstruction: (msg) => {
+            setAlertMessage(msg);
+            speak(msg);
+        }
     });
 
     useEffect(() => {
@@ -45,35 +62,16 @@ const MapDashboard: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        if (userLocation) {
-            checkProximity(userLocation.lat, userLocation.lng);
-
-            if (isNavigating && destination) {
-                const dist = getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, destination.lat, destination.lng);
-                // Estimate time: assume 40km/h average speed
-                const time = (dist / 40) * 60;
-                setNavStats({
-                    distance: dist,
-                    duration: Math.ceil(time)
-                });
-            }
+        if (userLocation && isNavigating && destination) {
+            const dist = getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, destination.lat, destination.lng);
+            // Estimate time: assume 40km/h average speed
+            const time = (dist / 40) * 60;
+            setNavStats({
+                distance: dist,
+                duration: Math.ceil(time)
+            });
         }
     }, [userLocation, isNavigating, destination]);
-
-    const checkProximity = (lat: number, lng: number) => {
-        if (!hazards.length) return;
-
-        hazards.forEach(h => {
-            const [hLng, hLat] = h.location.coordinates;
-            const dist = getDistanceFromLatLonInKm(lat, lng, hLat, hLng);
-            // Threshold 0.2km (200m)
-            if (dist < 0.2) {
-                const msg = `${h.type.replace('_', ' ').toUpperCase()} AHEAD: ${h.name}`;
-                setAlertMessage(msg);
-                speak(msg);
-            }
-        });
-    };
 
     const speak = (text: string) => {
         if ('speechSynthesis' in window) {
@@ -82,6 +80,8 @@ const MapDashboard: React.FC = () => {
             window.speechSynthesis.speak(utterance);
         }
     };
+
+
 
     function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
         var R = 6371; // Radius of the earth in km
@@ -168,7 +168,10 @@ const MapDashboard: React.FC = () => {
             {routeSegments.length > 0 && !isNavigating && (
                 <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-[400]">
                     <button
-                        onClick={() => setIsNavigating(true)}
+                        onClick={() => {
+                            setIsNavigating(true);
+                            setFollowMode(true);
+                        }}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 flex items-center gap-2"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -179,12 +182,27 @@ const MapDashboard: React.FC = () => {
                 </div>
             )}
 
+            {/* Re-Center Button */}
+            {isNavigating && !followMode && (
+                <div className="absolute bottom-32 left-1/2 transform -translate-x-1/2 z-[400]">
+                    <button
+                        onClick={() => setFollowMode(true)}
+                        className="bg-white text-blue-600 font-bold py-2 px-6 rounded-full shadow-lg border border-blue-200 animate-bounce"
+                    >
+                        Re-center
+                    </button>
+                </div>
+            )}
+
             {/* Navigation Overlay */}
             {isNavigating && (
                 <NavigationOverlay
                     distanceKm={navStats.distance}
                     durationMin={navStats.duration}
-                    onExit={() => setIsNavigating(false)}
+                    onExit={() => {
+                        setIsNavigating(false);
+                        setFollowMode(false);
+                    }}
                 />
             )}
         </div>
