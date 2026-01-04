@@ -23,6 +23,9 @@ interface MapContextProps {
     setIsNavigating: (isNavigating: boolean) => void;
     followMode: boolean;
     setFollowMode: (followMode: boolean) => void;
+    // Recenter Trigger
+    recenterTrigger: number;
+    triggerRecenter: () => void;
 }
 
 const MapContext = createContext<MapContextProps | undefined>(undefined);
@@ -33,6 +36,7 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const [showHazards, setShowHazards] = useState(true);
     const [isNavigating, setIsNavigating] = useState(false);
     const [followMode, setFollowMode] = useState(false);
+    const [recenterTrigger, setRecenterTrigger] = useState(0);
 
     const userLocation = geolocation.coordinates
         ? {
@@ -56,7 +60,9 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 isNavigating,
                 setIsNavigating,
                 followMode,
-                setFollowMode
+                setFollowMode,
+                recenterTrigger,
+                triggerRecenter: () => setRecenterTrigger(prev => prev + 1)
             }}
         >
             {children}

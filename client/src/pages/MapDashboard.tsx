@@ -10,6 +10,7 @@ import NavigationOverlay from '../components/Map/NavigationOverlay';
 import AlertBanner from '../components/UI/AlertBanner';
 import AQIWidget from '../components/UI/AQIWidget';
 import VehicleSelector from '../components/UI/VehicleSelector';
+import LocateButton from '../components/UI/LocateButton';
 import LaneGuidance from '../components/UI/LaneGuidance';
 import { useAuth } from '../context/AuthContext';
 import { useMapContext } from '../context/MapContext';
@@ -155,6 +156,7 @@ const MapDashboard: React.FC = () => {
 
             {/* Bottom Right - Layer Toggles */}
             <div className="absolute bottom-20 right-4 md:bottom-8 md:right-4 z-[400] flex flex-col gap-4 items-end">
+                <LocateButton />
                 <VehicleSelector />
                 <LayerToggles toggles={layers} onToggleConfig={handleToggle} />
             </div>

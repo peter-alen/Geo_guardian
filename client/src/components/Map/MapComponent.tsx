@@ -3,10 +3,10 @@ import { MapContainer, TileLayer, useMap } from 'react-leaflet';
 import L, { type LatLngExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Fix for default marker icon missing in React-Leaflet
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-import LocateControl from './LocateControl';
+// import LocateControl from './LocateControl';
+import RecenterHandler from './RecenterHandler';
 import UserMarker from './UserMarker';
 import NavigationCamera from './NavigationCamera';
 import { useMapContext } from '../../context/MapContext';
@@ -78,7 +78,8 @@ const MapComponent: React.FC<{
             )}
 
             <UserMarker />
-            <LocateControl />
+            {/* <LocateControl /> - Replaced by UI Button in MapDashboard */}
+            <RecenterHandler />
             <NavigationCamera />
             {children}
         </MapContainer>
