@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { useMapContext } from '../../context/MapContext';
 import { useAuth } from '../../context/AuthContext';
 import { calculateBearing, getDistance } from '../../utils/mapUtils';
-import carIcon from '../../assets/car1.svg';
+import carIcon from '../../assets/car1.png';
 import heavyIcon from '../../assets/heavy1.svg';
 import emergencyIcon from '../../assets/emergency1.svg';
 
@@ -79,7 +79,7 @@ const UserMarker: React.FC = () => {
                 */}
                 <div
                     id="vehicle-icon-inner"
-                    className="relative z-10 transition-transform duration-500 linear shadow-xl drop-shadow-lg"
+                    className="relative z-10 transition-transform duration-500 ease-linear shadow-xl drop-shadow-lg"
                     style={{
                         transform: `rotate(${displayHeading}deg)`,
                         width: `${size}px`,
