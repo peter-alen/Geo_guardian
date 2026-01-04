@@ -79,14 +79,20 @@ body {
   border-bottom: 4px solid #3b82f6;
 }
 
-/*
-   NOTE: We CANNOT apply transforms to .leaflet-map-pane or .leaflet-marker-icon
-   because Leaflet uses 'transform: translate3d(...)' to position them.
-   Overwriting it with CSS breaks the map interactivity and positioning.
+/* MapLibre Vehicle Marker */
+.vehicle-marker-3d {
+  background: none;
+  border: none;
+  cursor: pointer;
+  z-index: 9999 !important;
+}
 
-   If we truly needed upright markers, we'd need custom DivIcons that have an internal wrapper we can rotate.
-   For now, we prioritize the Map View working correctly.
-*/
+.vehicle-marker-3d img {
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.8));
+  transform-origin: center;
+  transition: transform 0.2s;
+}
+
 
 /* Ensure tile images don't get blurry/jagged */
 .leaflet-tile-container img {

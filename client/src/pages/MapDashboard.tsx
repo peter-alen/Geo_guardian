@@ -16,6 +16,7 @@ import { useAuth } from '../context/AuthContext';
 import { useMapContext } from '../context/MapContext';
 import useHazardAlerts from '../hooks/useHazardAlerts';
 import useNavigationLogic from '../hooks/useNavigationLogic';
+import MapLibreNavigation from '../components/Map/MapLibreNavigation';
 
 const MapDashboard: React.FC = () => {
     const { user } = useAuth();
@@ -32,6 +33,7 @@ const MapDashboard: React.FC = () => {
     const [routeSegments, setRouteSegments] = useState<any[]>([]);
     const [alertMessage, setAlertMessage] = useState<string | null>(null);
     const [hazards, setHazards] = useState<any[]>([]);
+
     // Navigation Stats
     const [navStats, setNavStats] = useState({
         distance: 0, // km
@@ -82,8 +84,6 @@ const MapDashboard: React.FC = () => {
         }
     };
 
-
-
     function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
         var R = 6371; // Radius of the earth in km
         var dLat = deg2rad(lat2 - lat1);
@@ -91,8 +91,7 @@ const MapDashboard: React.FC = () => {
         var a =
             Math.sin(dLat / 2) * Math.sin(dLat / 2) +
             Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
-            Math.sin(dLon / 2) * Math.sin(dLon / 2)
-            ;
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
         var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         var d = R * c; // Distance in km
         return d;
@@ -134,10 +133,14 @@ const MapDashboard: React.FC = () => {
 
     return (
         <div className="h-full w-full relative">
-            <MapComponent activeStyle={mapStyle} showTraffic={layers.traffic}>
-                <HazardLayers hazards={hazards} visibleTypes={layers} />
-                <RoutingLayer segments={routeSegments} />
-            </MapComponent>
+            {isNavigating ? (
+                <MapLibreNavigation routeSegments={routeSegments} />
+            ) : (
+                <MapComponent activeStyle={mapStyle} showTraffic={layers.traffic}>
+                    <HazardLayers hazards={hazards} visibleTypes={layers} />
+                    <RoutingLayer segments={routeSegments} />
+                </MapComponent>
+            )}
 
             {alertMessage && <AlertBanner message={alertMessage} type="warning" onClose={() => setAlertMessage(null)} />}
 
@@ -212,4 +215,3 @@ const MapDashboard: React.FC = () => {
 };
 
 export default MapDashboard;
-
