@@ -61,4 +61,39 @@ body {
   height: 100%;
   width: 100%;
   z-index: 0;
+  transition: all 0.5s ease-in-out;
+}
+
+/* 3D Navigation Mode */
+.leaflet-container.map-navigation-3d {
+  /* Rotate the WHOLE container.
+     This preserves Leaflet's internal panning/marker positioning (which uses coordinates inside this container).
+  */
+  transform: perspective(1000px) rotateX(35deg) scale(1.5) translateY(-5%);
+  transition: transform 1s ease-in-out;
+  z-index: 10;
+  /* Ensure it stays above other elements if overlaps */
+
+  /* Debug borders - User likes them confirmed */
+  border-top: 4px solid #3b82f6;
+  border-bottom: 4px solid #3b82f6;
+}
+
+/*
+   NOTE: We CANNOT apply transforms to .leaflet-map-pane or .leaflet-marker-icon
+   because Leaflet uses 'transform: translate3d(...)' to position them.
+   Overwriting it with CSS breaks the map interactivity and positioning.
+
+   If we truly needed upright markers, we'd need custom DivIcons that have an internal wrapper we can rotate.
+   For now, we prioritize the Map View working correctly.
+*/
+
+/* Ensure tile images don't get blurry/jagged */
+.leaflet-tile-container img {
+  image-rendering: optimizeQuality;
+}
+
+/* Hide control containers if needed (e.g. zoom controls might look weird tilted) */
+.map-navigation-3d .leaflet-control-container .leaflet-top {
+  top: 50px;
 }

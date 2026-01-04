@@ -18,6 +18,11 @@ interface MapContextProps {
     // Layer toggles
     showHazards: boolean;
     setShowHazards: (show: boolean) => void;
+    // Navigation State
+    isNavigating: boolean;
+    setIsNavigating: (isNavigating: boolean) => void;
+    followMode: boolean;
+    setFollowMode: (followMode: boolean) => void;
 }
 
 const MapContext = createContext<MapContextProps | undefined>(undefined);
@@ -26,6 +31,8 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const geolocation = useGeolocation();
     const [destination, setDestination] = useState<{ lat: number; lng: number } | null>(null);
     const [showHazards, setShowHazards] = useState(true);
+    const [isNavigating, setIsNavigating] = useState(false);
+    const [followMode, setFollowMode] = useState(false);
 
     const userLocation = geolocation.coordinates
         ? {
@@ -45,7 +52,11 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 destination,
                 setDestination,
                 showHazards,
-                setShowHazards
+                setShowHazards,
+                isNavigating,
+                setIsNavigating,
+                followMode,
+                setFollowMode
             }}
         >
             {children}

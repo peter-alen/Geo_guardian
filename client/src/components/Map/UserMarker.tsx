@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Marker, Popup, useMap } from 'react-leaflet';
+import { Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { useMapContext } from '../../context/MapContext';
@@ -12,7 +12,7 @@ import emergencyIcon from '../../assets/emergency1.svg';
 const UserMarker: React.FC = () => {
     const { userLocation } = useMapContext();
     const { user } = useAuth();
-    const map = useMap();
+
 
     // State for smooth rotation
     const [currentHeading, setCurrentHeading] = useState(0);
@@ -79,7 +79,7 @@ const UserMarker: React.FC = () => {
                 */}
                 <div
                     id="vehicle-icon-inner"
-                    className="relative z-10 transition-transform duration-300 ease-linear shadow-xl drop-shadow-lg"
+                    className="relative z-10 transition-transform duration-500 linear shadow-xl drop-shadow-lg"
                     style={{
                         transform: `rotate(${displayHeading}deg)`,
                         width: `${size}px`,
@@ -103,14 +103,7 @@ const UserMarker: React.FC = () => {
         });
     }, [user?.vehicleType, displayHeading]);
 
-    useEffect(() => {
-        if (userLocation) {
-            map.flyTo([userLocation.lat, userLocation.lng], map.getZoom(), {
-                animate: true,
-                duration: 1.0 // S slightly faster animation to keep up with movement
-            });
-        }
-    }, [userLocation, map]);
+
 
     if (!userLocation) return null;
 
