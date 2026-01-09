@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import LoginPage from './pages/LoginPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { MapProvider } from './context/MapContext';
+import { ThemeProvider } from './context/ThemeContext';
 import MapDashboard from './pages/MapDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 
@@ -27,26 +28,28 @@ const Layout = ({ children }: { children: React.ReactNode }) => (
 function App() {
   return (
     <AuthProvider>
-      <MapProvider>
-        <Router>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route
-              path="/*"
-              element={
-                <PrivateRoute>
-                  <Layout>
-                    <Routes>
-                      <Route path="/" element={<MapDashboard />} />
-                      <Route path="/admin" element={<AdminDashboard />} />
-                    </Routes>
-                  </Layout>
-                </PrivateRoute>
-              }
-            />
-          </Routes>
-        </Router>
-      </MapProvider>
+      <ThemeProvider>
+        <MapProvider>
+          <Router>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route
+                path="/*"
+                element={
+                  <PrivateRoute>
+                    <Layout>
+                      <Routes>
+                        <Route path="/" element={<MapDashboard />} />
+                        <Route path="/admin" element={<AdminDashboard />} />
+                      </Routes>
+                    </Layout>
+                  </PrivateRoute>
+                }
+              />
+            </Routes>
+          </Router>
+        </MapProvider>
+      </ThemeProvider>
     </AuthProvider>
   );
 }

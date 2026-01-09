@@ -29,7 +29,7 @@ const Effect3DView = () => {
 
     React.useEffect(() => {
         const container = map.getContainer();
-        if (isNavigating && followMode) {
+        if ((isNavigating && followMode)) {
             container.classList.add('map-navigation-3d');
         } else {
             container.classList.remove('map-navigation-3d');
@@ -42,8 +42,9 @@ const Effect3DView = () => {
 const MapComponent: React.FC<{
     children?: React.ReactNode;
     activeStyle?: string;
+    viewMode?: '2d' | '3d' | 'satellite';
     showTraffic?: boolean;
-}> = ({ children, activeStyle = 'standard', showTraffic = false }) => {
+}> = ({ children, activeStyle = 'standard', viewMode = '2d', showTraffic = false }) => {
     const { userLocation } = useMapContext();
 
     // Default position: London (or User's last known) - this could be dynamic

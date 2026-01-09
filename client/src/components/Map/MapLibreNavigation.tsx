@@ -9,14 +9,16 @@ import emergencyIcon from '../../assets/emergency1.svg';
 
 interface MapLibreNavigationProps {
     routeSegments: any[];
+    theme: 'light' | 'dark';
+    viewMode: '2d' | '3d' | 'satellite';
 }
 
-const MapLibreNavigation: React.FC<MapLibreNavigationProps> = ({ routeSegments }) => {
+const MapLibreNavigation: React.FC<MapLibreNavigationProps> = ({ routeSegments, theme, viewMode }) => {
     const mapContainer = useRef<HTMLDivElement>(null);
     const map = useRef<maplibregl.Map | null>(null);
     const markerRef = useRef<maplibregl.Marker | null>(null);
     const { userLocation, followMode, setFollowMode } = useMapContext();
-    const { user } = useAuth(); // Get user for vehicleType
+    const { user } = useAuth();
     const [mapLoaded, setMapLoaded] = useState(false);
 
     // 1. Initialize MapLibre
@@ -25,65 +27,19 @@ const MapLibreNavigation: React.FC<MapLibreNavigationProps> = ({ routeSegments }
 
         map.current = new maplibregl.Map({
             container: mapContainer.current,
-            style: 'https://tiles.openfreemap.org/styles/liberty', // Free style with OSM data
+            style: 'https://tiles.openfreemap.org/styles/liberty', // Default
             center: userLocation ? [userLocation.lng, userLocation.lat] : [-0.09, 51.505],
             zoom: 17,
-            pitch: 60,
+            pitch: viewMode === '2d' ? 0 : 60,
             bearing: userLocation?.heading || 0
         });
 
-        // Disable follow mode on interaction
         map.current.on('dragstart', () => setFollowMode(false));
         map.current.on('pitchstart', () => setFollowMode(false));
 
         map.current.on('load', () => {
             setMapLoaded(true);
-
-            // --- Force "Night Mode" by overwriting all layer colors ---
-            const mapInstance = map.current!;
-            const style = mapInstance.getStyle();
-
-            style.layers?.forEach((layer) => {
-                // 1. Backgrounds & Land
-                if (layer.type === 'background') {
-                    mapInstance.setPaintProperty(layer.id, 'background-color', '#0f172a'); // Deep Blue/Black
-                }
-                if (layer.type === 'fill') {
-                    // This creates a uniform dark ground, covering "landuse" (yellow) layers
-                    mapInstance.setPaintProperty(layer.id, 'fill-color', '#1e293b'); // Dark Slate
-                    mapInstance.setPaintProperty(layer.id, 'fill-opacity', 1);
-                }
-
-                // 2. Roads
-                if (layer.type === 'line') {
-                    // Make roads lighter so they pop against dark ground
-                    mapInstance.setPaintProperty(layer.id, 'line-color', '#64748b'); // Slate-500
-                }
-
-                // 3. Text
-                if (layer.type === 'symbol') {
-                    mapInstance.setPaintProperty(layer.id, 'text-color', '#e2e8f0'); // White-ish
-                    mapInstance.setPaintProperty(layer.id, 'text-halo-color', '#0f172a'); // Dark halo
-                }
-
-                // 4. Existing 3D Buildings (Restyle them)
-                if (layer.type === 'fill-extrusion') {
-                    mapInstance.setPaintProperty(layer.id, 'fill-extrusion-color', '#334155'); // Dark Grey
-                    mapInstance.setPaintProperty(layer.id, 'fill-extrusion-opacity', 0.9);
-
-                    // Force minimum height to ensure visibility even if data is missing
-                    mapInstance.setPaintProperty(layer.id, 'fill-extrusion-height', [
-                        'interpolate', ['linear'], ['zoom'],
-                        13, 0,
-                        14, ['coalesce', ['get', 'render_height'], ['get', 'height'], 20]
-                    ]);
-                    mapInstance.setPaintProperty(layer.id, 'fill-extrusion-base', [
-                        'interpolate', ['linear'], ['zoom'],
-                        13, 0,
-                        14, ['coalesce', ['get', 'render_min_height'], ['get', 'min_height'], 0]
-                    ]);
-                }
-            });
+            updateMapStyle(map.current!, theme, viewMode);
         });
 
         return () => {
@@ -91,6 +47,67 @@ const MapLibreNavigation: React.FC<MapLibreNavigationProps> = ({ routeSegments }
             map.current = null;
         };
     }, []);
+
+    // 2. Handle Style & Theme Updates
+    useEffect(() => {
+        if (!map.current || !mapLoaded) return;
+        updateMapStyle(map.current, theme, viewMode);
+    }, [theme, viewMode, mapLoaded]);
+
+    const updateMapStyle = (mapInstance: maplibregl.Map, currentTheme: string, currentView: string) => {
+        // --- 1. View Mode (Perspective) ---
+        if (currentView === '2d') {
+            mapInstance.easeTo({ pitch: 0 });
+        } else if (currentView === '3d' || currentView === 'satellite') {
+            // Keep pitch for 3D/Sat if desired, or set it
+            if (currentView === '3d') mapInstance.easeTo({ pitch: 60 });
+            // Satellite might want 0 or 60 depending on preference, sticking to 60 for nav feel if tracking
+        }
+
+        // --- 2. Style / Colors ---
+        // Basic Raster Satellite Layer handling could go here if we had a source URL
+        // For now, we are modifying the vector style colors.
+
+        const style = mapInstance.getStyle();
+        if (!style || !style.layers) return;
+
+        const isDark = currentTheme === 'dark';
+
+        style.layers.forEach((layer) => {
+            // Backgrounds
+            if (layer.type === 'background') {
+                mapInstance.setPaintProperty(layer.id, 'background-color', isDark ? '#0f172a' : '#f8fafc');
+            }
+            if (layer.type === 'fill') {
+                // Land / Ground
+                mapInstance.setPaintProperty(layer.id, 'fill-color', isDark ? '#1e293b' : '#e2e8f0');
+            }
+
+            // Roads
+            if (layer.type === 'line') {
+                // Heuristic: identify road layers
+                if (layer.id.includes('road') || layer.id.includes('highway') || layer.id.includes('transportation')) {
+                    mapInstance.setPaintProperty(layer.id, 'line-color', isDark ? '#64748b' : '#ffffff');
+                }
+            }
+
+            // Text
+            if (layer.type === 'symbol') {
+                mapInstance.setPaintProperty(layer.id, 'text-color', isDark ? '#e2e8f0' : '#1e293b');
+                mapInstance.setPaintProperty(layer.id, 'text-halo-color', isDark ? '#0f172a' : '#ffffff');
+            }
+
+            // Buildings (3D)
+            if (layer.type === 'fill-extrusion') {
+                // Toggle visibility based on viewMode?
+                // Usually we want them in 3D, maybe not in 2D or Satellite?
+                // For now, let's keep them but style them.
+
+                mapInstance.setPaintProperty(layer.id, 'fill-extrusion-color', isDark ? '#334155' : '#cbd5e1');
+                mapInstance.setPaintProperty(layer.id, 'fill-extrusion-opacity', currentView === '2d' ? 0 : 0.9);
+            }
+        });
+    };
 
     // 3. Update Camera & Marker
     useEffect(() => {
@@ -103,7 +120,7 @@ const MapLibreNavigation: React.FC<MapLibreNavigationProps> = ({ routeSegments }
             map.current.easeTo({
                 center: [lng, lat],
                 zoom: 18,
-                pitch: 60,
+                pitch: viewMode === '2d' ? 0 : 60,
                 bearing: heading || 0,
                 duration: 1000,
                 easing: (t) => t
@@ -117,14 +134,9 @@ const MapLibreNavigation: React.FC<MapLibreNavigationProps> = ({ routeSegments }
         if (vehicleType === 'emergency') iconSrc = emergencyIcon;
 
         // Marker Update
-        if (!userLocation) return;
-
         if (!markerRef.current) {
-            console.log("Creating new Vehicle Marker", vehicleType);
             const el = document.createElement('div');
             el.className = 'vehicle-marker-3d';
-
-            // Explicit dimensions are crucial
             el.style.width = '50px';
             el.style.height = '50px';
 
@@ -141,20 +153,14 @@ const MapLibreNavigation: React.FC<MapLibreNavigationProps> = ({ routeSegments }
                 .setLngLat([lng, lat])
                 .addTo(map.current);
         } else {
-            console.log("Updating Vehicle Marker Position", lng, lat);
-            // Update Position
             markerRef.current.setLngLat([lng, lat]);
-
-            // Update Icon if changed (dynamic switching)
             const img = markerRef.current.getElement().querySelector('img');
             if (img && img.src !== iconSrc && !img.src.endsWith(iconSrc)) {
-                // Note: img.src is full URL, iconSrc might be relative/imported.
-                // Safe check: just update it. React won't re-render this DOM, we do it manually.
                 img.src = iconSrc;
             }
         }
 
-    }, [userLocation, mapLoaded, followMode, user?.vehicleType]);
+    }, [userLocation, mapLoaded, followMode, user?.vehicleType, viewMode]);
 
     // 4. Render Route
     useEffect(() => {
