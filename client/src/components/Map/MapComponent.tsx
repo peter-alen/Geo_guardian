@@ -44,8 +44,10 @@ const MapComponent: React.FC<{
     activeStyle?: string;
     showTraffic?: boolean;
 }> = ({ children, activeStyle = 'standard', showTraffic = false }) => {
+    const { userLocation } = useMapContext();
+
     // Default position: London (or User's last known) - this could be dynamic
-    const defaultPosition: LatLngExpression = [51.505, -0.09];
+    const defaultPosition: LatLngExpression = userLocation ? [userLocation.lat, userLocation.lng] : [51.505, -0.09];
 
     // Note: We don't use className prop on MapContainer for dynamic updates
     // because React-Leaflet might not propagate it after mount.

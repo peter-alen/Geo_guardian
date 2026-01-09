@@ -5,9 +5,10 @@ interface NavigationOverlayProps {
     durationMin: number;
     destinationName?: string;
     onExit: () => void;
+    onStop: () => void;
 }
 
-const NavigationOverlay: React.FC<NavigationOverlayProps> = ({ distanceKm, durationMin, destinationName, onExit }) => {
+const NavigationOverlay: React.FC<NavigationOverlayProps> = ({ distanceKm, durationMin, destinationName, onExit, onStop }) => {
     return (
         <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-5px_15px_rgba(0,0,0,0.1)] z-[1000] p-4 flex justify-between items-center animate-slide-up">
             <div className="flex flex-col">
@@ -22,12 +23,20 @@ const NavigationOverlay: React.FC<NavigationOverlayProps> = ({ distanceKm, durat
                 )}
             </div>
 
-            <button
-                onClick={onExit}
-                className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-full shadow-md transition-colors"
-            >
-                Exit
-            </button>
+            <div className="flex gap-3">
+                <button
+                    onClick={onExit}
+                    className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full shadow-md transition-colors"
+                >
+                    Exit
+                </button>
+                <button
+                    onClick={onStop}
+                    className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-full shadow-md transition-colors"
+                >
+                    Stop
+                </button>
+            </div>
         </div>
     );
 };

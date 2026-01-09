@@ -20,7 +20,7 @@ import MapLibreNavigation from '../components/Map/MapLibreNavigation';
 
 const MapDashboard: React.FC = () => {
     const { user } = useAuth();
-    const { userLocation, destination, setDestination, isNavigating, setIsNavigating, followMode, setFollowMode } = useMapContext();
+    const { userLocation, destination, setDestination, isNavigating, setIsNavigating, followMode, setFollowMode, triggerRecenter } = useMapContext();
     const [layers, setLayers] = useState({
         school_zone: true,
         hospital_zone: true,
@@ -65,7 +65,7 @@ const MapDashboard: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        if (userLocation && isNavigating && destination) {
+        if (userLocation && destination) {
             const dist = getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, destination.lat, destination.lng);
             // Estimate time: assume 40km/h average speed
             const time = (dist / 40) * 60;
@@ -74,7 +74,7 @@ const MapDashboard: React.FC = () => {
                 duration: Math.ceil(time)
             });
         }
-    }, [userLocation, isNavigating, destination]);
+    }, [userLocation, destination]);
 
     const speak = (text: string) => {
         if ('speechSynthesis' in window) {
@@ -169,15 +169,42 @@ const MapDashboard: React.FC = () => {
                 <MapStyleSwitcher currentStyle={mapStyle} onStyleChange={setMapStyle} />
             </div>
 
-            {/* Start Navigation Button */}
+            {/* Pre-Navigation Route Info & Start Button */}
             {routeSegments.length > 0 && !isNavigating && (
-                <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-[400]">
+                <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-[400] flex flex-col items-center gap-3">
+                    {/* Route Stats Card */}
+                    <div className="bg-slate-900/80 backdrop-blur-md border border-slate-700 p-3 rounded-2xl shadow-2xl flex items-center gap-4 animate-slide-up">
+                        <div className="flex flex-col">
+                            <span className="text-emerald-400 font-orbitron font-bold text-lg leading-none">
+                                {navStats.duration} min
+                            </span>
+                            <span className="text-slate-400 text-xs">
+                                {navStats.distance.toFixed(1)} km
+                            </span>
+                        </div>
+                        <div className="h-8 w-[1px] bg-slate-700" />
+                        <button
+                            onClick={() => {
+                                setDestination(null);
+                                setRouteSegments([]);
+                                triggerRecenter();
+                            }}
+                            className="p-2 hover:bg-slate-800 rounded-full transition-colors text-slate-400 hover:text-red-400"
+                            title="Clear Route"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    {/* Start Button */}
                     <button
                         onClick={() => {
                             setIsNavigating(true);
                             setFollowMode(true);
                         }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 flex items-center gap-2"
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all transform hover:scale-105 flex items-center gap-2 ring-4 ring-blue-600/20"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
@@ -207,6 +234,15 @@ const MapDashboard: React.FC = () => {
                     onExit={() => {
                         setIsNavigating(false);
                         setFollowMode(false);
+                        // Trigger recenter on the Leaflet map so it's not stuck at London or previous view
+                        triggerRecenter();
+                    }}
+                    onStop={() => {
+                        setIsNavigating(false);
+                        setFollowMode(false);
+                        setDestination(null);
+                        setRouteSegments([]);
+                        triggerRecenter();
                     }}
                 />
             )}
