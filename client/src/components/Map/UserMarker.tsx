@@ -10,7 +10,7 @@ import heavyIcon from '../../assets/heavy1.svg';
 import emergencyIcon from '../../assets/emergency1.svg';
 
 const UserMarker: React.FC = () => {
-    const { userLocation } = useMapContext();
+    const { userLocation, isNavigating } = useMapContext();
     const { user } = useAuth();
 
 
@@ -41,8 +41,57 @@ const UserMarker: React.FC = () => {
     // For this task, we prioritize our calculated heading for "realistic" movement smoothing
     const displayHeading = currentHeading;
 
-    // Create custom icon based on vehicle type
     const customIcon = useMemo(() => {
+        // If not navigating, show Google Maps style "View Mode" marker (Dot + Beam)
+        if (!isNavigating) {
+            const size = 80; // Size for the beam container
+
+            const iconMarkup = renderToStaticMarkup(
+                <div className="relative flex items-center justify-center w-full h-full">
+                    {/* The Beam - Rotated with heading */}
+                    <div
+                        className="absolute inset-0 flex items-center justify-center transition-transform duration-500 ease-linear"
+                        style={{
+                            transform: `rotate(${displayHeading}deg)`
+                        }}
+                    >
+                        {/* 
+                           Beam using conic-gradient.
+                           We want a sector pointing UP (0deg).
+                           Width: ~60 degrees.
+                           Fade edges.
+                        */}
+                        <div
+                            style={{
+                                width: '100%',
+                                height: '100%',
+                                background: `conic-gradient(from 330deg at 50% 50%, 
+                                    rgba(66, 133, 244, 0) 0deg, 
+                                    rgba(66, 133, 244, 0.5) 30deg, 
+                                    rgba(66, 133, 244, 0) 60deg
+                                )`,
+                                borderRadius: '50%',
+                            }}
+                        />
+                    </div>
+
+                    {/* The Dot - Stays centered, on top */}
+                    <div className="relative z-10 w-4 h-4 bg-[#4285F4] border-[2px] border-white rounded-full shadow-[0_0_10px_rgba(0,0,0,0.2)]" />
+                </div>
+            );
+
+            return L.divIcon({
+                html: iconMarkup,
+                className: 'custom-view-icon bg-transparent',
+                // Size must be large enough to contain the beam
+                iconSize: [size, size],
+                // Anchor at center
+                iconAnchor: [size / 2, size / 2],
+                popupAnchor: [0, -10]
+            });
+        }
+
+        // Navigation Mode: Show Vehicle Icon
         const vehicleType = user?.vehicleType || 'car';
         let iconSrc = carIcon;
         let size = 48;
@@ -70,16 +119,9 @@ const UserMarker: React.FC = () => {
                 />
 
                 {/* The Vehicle Icon - Rotated */}
-                {/* We rotate this inner div via CSS based on the re-render state OR we could do it via ref for less re-renders.
-                    Given prompt requirements for "Update rotation angle dynamically... Rotation must feel smooth", 
-                    passing it here in styles works well with React reconciliation if userLocation updates frequently. 
-                    However, for ultra-smoothness independent of React render cycle, direct DOM manipulation via ref is better.
-                    BUT, since we are using L.divIcon string generation, we can't easily attach a React Ref to the string output.
-                    So we rely on the `key` or re-render of this icon instance or use the inline style method below.
-                */}
                 <div
                     id="vehicle-icon-inner"
-                    className="relative z-10 transition-transform duration-500 ease-linear shadow-xl drop-shadow-lg"
+                    className="relative z-10 transition-transform duration-500 ease-linear"
                     style={{
                         transform: `rotate(${displayHeading}deg)`,
                         width: `${size}px`,
@@ -88,7 +130,6 @@ const UserMarker: React.FC = () => {
                         backgroundSize: 'contain',
                         backgroundRepeat: 'no-repeat',
                         backgroundPosition: 'center',
-                        filter: 'drop-shadow(0px 4px 6px rgba(0,0,0,0.3))'
                     }}
                 />
             </div>
@@ -101,7 +142,7 @@ const UserMarker: React.FC = () => {
             iconAnchor: [size * 0.75, size * 0.75],
             popupAnchor: [0, -size / 2]
         });
-    }, [user?.vehicleType, displayHeading]);
+    }, [user?.vehicleType, displayHeading, isNavigating]);
 
 
 
