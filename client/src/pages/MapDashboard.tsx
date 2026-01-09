@@ -32,7 +32,8 @@ const MapDashboard: React.FC = () => {
         traffic: false
     });
     const [viewMode, setViewMode] = useState<'2d' | '3d' | 'satellite'>('2d');
-    const [routeSegments, setRouteSegments] = useState<any[]>([]);
+    const [allRoutes, setAllRoutes] = useState<any[]>([]);
+    const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
     const [alertMessage, setAlertMessage] = useState<string | null>(null);
     const [hazards, setHazards] = useState<any[]>([]);
 
@@ -51,8 +52,10 @@ const MapDashboard: React.FC = () => {
         }
     });
 
+    const currentRoute = allRoutes[selectedRouteIndex];
+
     useNavigationLogic({
-        routeSegments,
+        routeSegments: currentRoute?.segments || [],
         onInstruction: (msg) => {
             setAlertMessage(msg);
             speak(msg);
@@ -66,17 +69,6 @@ const MapDashboard: React.FC = () => {
             .catch(err => console.error(err));
     }, []);
 
-    useEffect(() => {
-        if (userLocation && destination) {
-            const dist = getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, destination.lat, destination.lng);
-            // Estimate time: assume 40km/h average speed
-            const time = (dist / 40) * 60;
-            setNavStats({
-                distance: dist,
-                duration: Math.ceil(time)
-            });
-        }
-    }, [userLocation, destination]);
 
     const speak = (text: string) => {
         if ('speechSynthesis' in window) {
@@ -86,22 +78,6 @@ const MapDashboard: React.FC = () => {
         }
     };
 
-    function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
-        var R = 6371; // Radius of the earth in km
-        var dLat = deg2rad(lat2 - lat1);
-        var dLon = deg2rad(lon2 - lon1);
-        var a =
-            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
-            Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        var d = R * c; // Distance in km
-        return d;
-    }
-
-    function deg2rad(deg: number) {
-        return deg * (Math.PI / 180)
-    }
 
     const handleToggle = (key: string) => {
         setLayers(prev => ({ ...prev, [key]: !prev[key as keyof typeof prev] }));
@@ -120,10 +96,19 @@ const MapDashboard: React.FC = () => {
                 start, end, vehicleType: user?.vehicleType || 'car'
             });
 
-            setRouteSegments(res.data.segments);
+            const fetchedRoutes = res.data.routes;
+            setAllRoutes(fetchedRoutes);
+            setSelectedRouteIndex(0); // Default to first route
 
-            if (res.data.hasVehicleRestrictionViolations) {
-                setAlertMessage(res.data.warning || 'Alert: Restriction Violation on Route');
+            const primaryRoute = fetchedRoutes[0];
+            // Use road-based distance and duration from backend primary route
+            setNavStats({
+                distance: parseFloat(primaryRoute.totalDistanceKm),
+                duration: primaryRoute.totalDurationMin
+            });
+
+            if (primaryRoute.hasVehicleRestrictionViolations) {
+                setAlertMessage(primaryRoute.warning || 'Alert: Restriction Violation on Route');
             } else {
                 setAlertMessage(null);
             }
@@ -133,11 +118,28 @@ const MapDashboard: React.FC = () => {
         }
     };
 
+    const handleRouteSelect = (index: number) => {
+        const selected = allRoutes[index];
+        if (!selected) return;
+
+        setSelectedRouteIndex(index);
+        setNavStats({
+            distance: parseFloat(selected.totalDistanceKm),
+            duration: selected.totalDurationMin
+        });
+
+        if (selected.hasVehicleRestrictionViolations) {
+            setAlertMessage(selected.warning || 'Alert: Restriction Violation on Route');
+        } else {
+            setAlertMessage(null);
+        }
+    };
+
     return (
         <div className="h-full w-full relative">
             {isNavigating ? (
                 <MapLibreNavigation
-                    routeSegments={routeSegments}
+                    routeSegments={currentRoute?.segments || []}
                     theme={theme}
                     viewMode={viewMode}
                 />
@@ -148,7 +150,11 @@ const MapDashboard: React.FC = () => {
                     showTraffic={layers.traffic}
                 >
                     <HazardLayers hazards={hazards} visibleTypes={layers} />
-                    <RoutingLayer segments={routeSegments} />
+                    <RoutingLayer
+                        routes={allRoutes}
+                        selectedIndex={selectedRouteIndex}
+                        onRouteSelect={handleRouteSelect}
+                    />
                 </MapComponent>
             )}
 
@@ -165,7 +171,7 @@ const MapDashboard: React.FC = () => {
             </div>
 
             {/* Lane Guidance Overlay - Mocked to show when route is active */}
-            <LaneGuidance visible={routeSegments.length > 0} />
+            <LaneGuidance visible={allRoutes.length > 0} />
 
             {/* Bottom Right - Layer Toggles */}
             <div className="absolute bottom-20 right-4 md:bottom-8 md:right-4 z-[400] flex flex-col gap-4 items-end">
@@ -180,7 +186,7 @@ const MapDashboard: React.FC = () => {
             </div>
 
             {/* Pre-Navigation Route Info & Start Button */}
-            {routeSegments.length > 0 && !isNavigating && (
+            {allRoutes.length > 0 && !isNavigating && (
                 <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-[400] flex flex-col items-center gap-3">
                     {/* Route Stats Card */}
                     <div className="bg-slate-900/80 backdrop-blur-md border border-slate-700 p-3 rounded-2xl shadow-2xl flex items-center gap-4 animate-slide-up">
@@ -196,7 +202,7 @@ const MapDashboard: React.FC = () => {
                         <button
                             onClick={() => {
                                 setDestination(null);
-                                setRouteSegments([]);
+                                setAllRoutes([]);
                                 triggerRecenter();
                             }}
                             className="p-2 hover:bg-slate-800 rounded-full transition-colors text-slate-400 hover:text-red-400"
@@ -251,7 +257,7 @@ const MapDashboard: React.FC = () => {
                         setIsNavigating(false);
                         setFollowMode(false);
                         setDestination(null);
-                        setRouteSegments([]);
+                        setAllRoutes([]);
                         triggerRecenter();
                     }}
                 />
