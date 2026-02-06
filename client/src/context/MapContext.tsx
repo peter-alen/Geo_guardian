@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, type ReactNode } from 'react';
 import useGeolocation from '../hooks/useGeolocation';
+import { useSimulatedLocation } from '../hooks/useSimulatedLocation';
 
 interface UserLocation {
     lat: number;
@@ -26,6 +27,10 @@ interface MapContextProps {
     // Recenter Trigger
     recenterTrigger: number;
     triggerRecenter: () => void;
+    // Simulation
+    startSimulation: (route: [number, number][]) => void;
+    stopSimulation: () => void;
+    isSimulating: boolean;
 }
 
 const MapContext = createContext<MapContextProps | undefined>(undefined);
@@ -38,14 +43,38 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const [followMode, setFollowMode] = useState(false);
     const [recenterTrigger, setRecenterTrigger] = useState(0);
 
-    const userLocation = geolocation.coordinates
+    // Simulation State
+    const [isSimulating, setIsSimulating] = useState(false);
+    const [simulationRoute, setSimulationRoute] = useState<[number, number][] | null>(null);
+    const simLocation = useSimulatedLocation(simulationRoute, isSimulating, 30); // 30 km/h default
+
+    const userLocation = isSimulating && simLocation.coordinates
         ? {
-            lat: geolocation.coordinates.lat,
-            lng: geolocation.coordinates.lng,
-            heading: geolocation.heading || 0,
-            speed: geolocation.speed || 0,
+            lat: simLocation.coordinates.lat,
+            lng: simLocation.coordinates.lng,
+            heading: simLocation.heading || 0,
+            speed: simLocation.speed || 0,
         }
-        : null;
+        : geolocation.coordinates
+            ? {
+                lat: geolocation.coordinates.lat,
+                lng: geolocation.coordinates.lng,
+                heading: geolocation.heading || 0,
+                speed: geolocation.speed || 0,
+            }
+            : null;
+
+    const startSimulation = (route: [number, number][]) => {
+        setSimulationRoute(route);
+        setIsSimulating(true);
+        setIsNavigating(true); // Auto-start nav mode usually
+        setFollowMode(true);
+    };
+
+    const stopSimulation = () => {
+        setIsSimulating(false);
+        setSimulationRoute(null);
+    };
 
     return (
         <MapContext.Provider
@@ -62,7 +91,10 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 followMode,
                 setFollowMode,
                 recenterTrigger,
-                triggerRecenter: () => setRecenterTrigger(prev => prev + 1)
+                triggerRecenter: () => setRecenterTrigger(prev => prev + 1),
+                startSimulation,
+                stopSimulation,
+                isSimulating
             }}
         >
             {children}

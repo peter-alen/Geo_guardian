@@ -22,7 +22,7 @@ import MapLibreNavigation from '../components/Map/MapLibreNavigation';
 const MapDashboard: React.FC = () => {
     const { user } = useAuth();
     const { theme } = useTheme();
-    const { userLocation, destination, setDestination, isNavigating, setIsNavigating, followMode, setFollowMode, triggerRecenter } = useMapContext();
+    const { userLocation, destination, setDestination, isNavigating, setIsNavigating, followMode, setFollowMode, triggerRecenter, startSimulation, stopSimulation, isSimulating } = useMapContext();
     const [layers, setLayers] = useState({
         school_zone: true,
         hospital_zone: true,
@@ -215,18 +215,36 @@ const MapDashboard: React.FC = () => {
                     </div>
 
                     {/* Start Button */}
-                    <button
-                        onClick={() => {
-                            setIsNavigating(true);
-                            setFollowMode(true);
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all transform hover:scale-105 flex items-center gap-2 ring-4 ring-blue-600/20"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-                        </svg>
-                        Start Navigation
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => {
+                                setIsNavigating(true);
+                                setFollowMode(true);
+                            }}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition-all transform hover:scale-105 flex items-center gap-2 ring-4 ring-blue-600/20"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                            </svg>
+                            Start Navigation
+                        </button>
+
+                        {/* Simulation Button */}
+                        <button
+                            onClick={() => {
+                                // Flatten segments to get raw coordinates path
+                                const flatRoute = routeSegments.flatMap(s => s.coordinates);
+                                startSimulation(flatRoute);
+                            }}
+                            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition-all transform hover:scale-105 flex items-center gap-2 ring-4 ring-purple-600/20"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Simulate
+                        </button>
+                    </div>
                 </div>
             )}
 
@@ -254,6 +272,9 @@ const MapDashboard: React.FC = () => {
                         triggerRecenter();
                     }}
                     onStop={() => {
+                        if (isSimulating) {
+                            stopSimulation();
+                        }
                         setIsNavigating(false);
                         setFollowMode(false);
                         setDestination(null);
