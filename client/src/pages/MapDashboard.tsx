@@ -161,9 +161,11 @@ const MapDashboard: React.FC = () => {
             {alertMessage && <AlertBanner message={alertMessage} type="warning" onClose={() => setAlertMessage(null)} />}
 
             {/* Top Left - Search */}
-            <div className="absolute top-4 left-4 right-4 md:left-14 md:right-auto md:w-auto z-[400]">
-                <SearchBox onDestinationSelect={handleDestinationSelect} />
-            </div>
+            {!isNavigating && (
+                <div className="absolute top-4 left-4 right-4 md:left-14 md:right-auto md:w-auto z-[400]">
+                    <SearchBox onDestinationSelect={handleDestinationSelect} />
+                </div>
+            )}
 
             {/* Top Right - AQI */}
             <div className="absolute top-20 right-4 md:top-4 md:right-4 z-[400] flex flex-col gap-2">
