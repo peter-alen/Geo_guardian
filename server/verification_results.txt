@@ -1,0 +1,18 @@
+Testing route for vehicleType: car
+Success! Routes found for car.
+Debug Profile: driving
+Distance: 1.88 km
+Duration: 6 min
+-----------------------------------
+Testing route for vehicleType: walk
+Success! Routes found for walk.
+Debug Profile: foot
+Distance: 1.88 km
+Duration: 6 min
+-----------------------------------
+Testing route for vehicleType: two-wheeler
+Success! Routes found for two-wheeler.
+Debug Profile: bike
+Distance: 1.88 km
+Duration: 6 min
+-----------------------------------

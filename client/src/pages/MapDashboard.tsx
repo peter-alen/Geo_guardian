@@ -71,6 +71,13 @@ const MapDashboard: React.FC = () => {
             .catch(err => console.error(err));
     }, []);
 
+    // Re-calculate route when vehicle type changes
+    useEffect(() => {
+        if (selectedLocation && user?.vehicleType) {
+            handleDestinationSelect(selectedLocation);
+        }
+    }, [user?.vehicleType]);
+
 
     const speak = (text: string) => {
         if ('speechSynthesis' in window) {
@@ -95,8 +102,12 @@ const MapDashboard: React.FC = () => {
         setDestination({ lat: latNum, lng: lngNum });
 
         // Mock Start as current userLocation if available, else deafult
-        const start = userLocation ? { lat: userLocation.lat, lng: userLocation.lng } : { lat: 51.505, lng: -0.09 };
+        const start = userLocation && userLocation.lat && userLocation.lng
+            ? { lat: userLocation.lat, lng: userLocation.lng }
+            : { lat: 51.505, lng: -0.09 };
         const end = { lat: latNum, lng: lngNum };
+
+        console.log('Calculating Route:', { start, end, vehicleType: user?.vehicleType });
 
         try {
             const res = await axios.post('http://localhost:5000/api/route/calculate', {
@@ -104,14 +115,23 @@ const MapDashboard: React.FC = () => {
             });
 
             const fetchedRoutes = res.data.routes;
+
+            if (!fetchedRoutes || fetchedRoutes.length === 0) {
+                console.warn('No routes found');
+                return;
+            }
+
             setAllRoutes(fetchedRoutes);
             setSelectedRouteIndex(0); // Default to first route
 
             const primaryRoute = fetchedRoutes[0];
+            const dist = parseFloat(primaryRoute.totalDistanceKm);
+            const dur = primaryRoute.totalDurationMin;
+
             // Use road-based distance and duration from backend primary route
             setNavStats({
-                distance: parseFloat(primaryRoute.totalDistanceKm),
-                duration: primaryRoute.totalDurationMin
+                distance: isNaN(dist) ? 0 : dist,
+                duration: isNaN(dur) ? 0 : dur
             });
 
             if (primaryRoute.hasVehicleRestrictionViolations) {

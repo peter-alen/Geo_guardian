@@ -7,11 +7,12 @@ const router = express.Router();
 const OSRM_API_URL = 'http://router.project-osrm.org/route/v1/driving';
 
 // Helper to fetch routes from OSRM
-async function getOsrmRoutes(start: { lat: number, lng: number }, end: { lat: number, lng: number }) {
+async function getOsrmRoutes(start: { lat: number, lng: number }, end: { lat: number, lng: number }, profile: string = 'driving') {
     try {
         // OSRM expects: longitude,latitude
         // Added alternatives=3 to get multiple routes if available
-        const url = `${OSRM_API_URL}/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson&alternatives=3`;
+        // Profiles: driving, bike, foot
+        const url = `http://router.project-osrm.org/route/v1/${profile}/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson&alternatives=3`;
         const response = await axios.get(url);
 
         if (response.data.code !== 'Ok' || !response.data.routes || response.data.routes.length === 0) {
@@ -37,7 +38,15 @@ router.post('/calculate', async (req, res) => {
             return res.status(400).json({ message: 'Start and End locations required' });
         }
 
-        const osrmRoutes = await getOsrmRoutes(start, end);
+        // Determine OSRM profile based on vehicleType
+        let profile = 'driving';
+        if (vehicleType === 'walk') {
+            profile = 'foot';
+        } else if (vehicleType === 'two-wheeler') {
+            profile = 'bike';
+        }
+
+        const osrmRoutes = await getOsrmRoutes(start, end, profile);
 
         if (osrmRoutes.length === 0) {
             return res.status(502).json({ message: 'Failed to calculate route service' });
@@ -58,9 +67,30 @@ router.post('/calculate', async (req, res) => {
                 }
             }
 
+            let duration = osrmRoute.duration; // seconds
+
+            // OSRM Demo Server fallback: 
+            // If the duration seems identical to driving or just to be safe for this demo,
+            // we manually calculate typical duration for walk/bike if the API returns suspicious data pattern
+            // or just strictly enforce average speeds for these modes.
+            const distanceMeters = osrmRoute.distance;
+
+            if (vehicleType === 'walk') {
+                // ~5 km/h = 1.39 m/s
+                duration = distanceMeters / 1.39;
+            } else if (vehicleType === 'two-wheeler') {
+                // Motorbike speed: ~45 km/h = 12.5 m/s
+                // OSRM 'bike' profile gives bicycle speeds (~15-20km/h), so we override it.
+                duration = distanceMeters / 12.5;
+            } else if (vehicleType === 'heavy') {
+                // Heavy vehicles are generally slower than cars due to speed limits/acceleration
+                // Assume ~80% of car speed, so 1.25x duration
+                duration = duration * 1.25;
+            }
+
             return {
-                totalDistanceKm: (osrmRoute.distance / 1000).toFixed(2),
-                totalDurationMin: Math.ceil(osrmRoute.duration / 60),
+                totalDistanceKm: (distanceMeters / 1000).toFixed(2),
+                totalDurationMin: Math.ceil(duration / 60),
                 hasVehicleRestrictionViolations: hasViolations,
                 warning: hasViolations ? warning : null,
                 segments: [

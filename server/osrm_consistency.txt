@@ -1,0 +1,18 @@
+Testing Profile: driving
+URL: http://router.project-osrm.org/route/v1/driving/76.56031575,9.95584025;76.1134352,10.8966938?overview=full&geometries=geojson&alternatives=3
+Distance: 147868.8 meters
+Duration: 8922 seconds
+Weight: 8922.8
+--------------------------------
+Testing Profile: foot
+URL: http://router.project-osrm.org/route/v1/foot/76.56031575,9.95584025;76.1134352,10.8966938?overview=full&geometries=geojson&alternatives=3
+Distance: 147868.8 meters
+Duration: 8922 seconds
+Weight: 8922.8
+--------------------------------
+Testing Profile: bike
+URL: http://router.project-osrm.org/route/v1/bike/76.56031575,9.95584025;76.1134352,10.8966938?overview=full&geometries=geojson&alternatives=3
+Distance: 147868.8 meters
+Duration: 8922 seconds
+Weight: 8922.8
+--------------------------------

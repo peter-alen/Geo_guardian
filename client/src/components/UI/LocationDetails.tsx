@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { formatDuration } from '../../utils/formatters';
 
 interface LocationDetailsProps {
     location: any;
@@ -111,9 +112,10 @@ const LocationDetails: React.FC<LocationDetailsProps> = ({
                                 <span className="text-emerald-400 font-bold font-mono text-lg">{distance.toFixed(1)} <span className="text-emerald-400/60 text-sm">km</span></span>
                             </div>
                             <div className="w-[1px] h-8 bg-slate-700/50"></div>
+
                             <div className="flex flex-col items-center">
                                 <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Duration</span>
-                                <span className="text-blue-400 font-bold font-mono text-lg">{Math.round(duration)} <span className="text-blue-400/60 text-sm">min</span></span>
+                                <span className="text-blue-400 font-bold font-mono text-lg">{formatDuration(duration)}</span>
                             </div>
                         </div>
                     )}

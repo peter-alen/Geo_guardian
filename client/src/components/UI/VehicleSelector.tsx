@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Car, Truck, Ambulance } from 'lucide-react';
+import { Car, Truck, Ambulance, Bike, Footprints } from 'lucide-react';
 
 const VehicleSelector: React.FC = () => {
     const { user, updateUser } = useAuth();
@@ -12,6 +12,8 @@ const VehicleSelector: React.FC = () => {
         { id: 'car', label: 'Car', icon: Car },
         { id: 'heavy', label: 'Heavy Vehicle', icon: Truck },
         { id: 'emergency', label: 'Emergency', icon: Ambulance },
+        { id: 'two-wheeler', label: 'Two Wheeler', icon: Bike },
+        { id: 'walk', label: 'Walk', icon: Footprints },
     ] as const;
 
     const currentVehicle = vehicleTypes.find(v => v.id === user.vehicleType) || vehicleTypes[0];
@@ -40,8 +42,8 @@ const VehicleSelector: React.FC = () => {
                                 setIsOpen(false);
                             }}
                             className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${user.vehicleType === v.id
-                                    ? 'bg-emerald-500/20 text-emerald-400'
-                                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                ? 'bg-emerald-500/20 text-emerald-400'
+                                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                                 }`}
                         >
                             <v.icon size={16} />

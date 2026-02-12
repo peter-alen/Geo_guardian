@@ -6,7 +6,7 @@ export interface User {
     _id?: string;
     name: string;
     email: string;
-    vehicleType: 'car' | 'heavy' | 'emergency';
+    vehicleType: 'car' | 'heavy' | 'emergency' | 'walk' | 'two-wheeler';
     role: 'user' | 'admin';
 }
 
