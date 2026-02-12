@@ -11,7 +11,7 @@ import AlertBanner from '../components/UI/AlertBanner';
 import AQIWidget from '../components/UI/AQIWidget';
 import VehicleSelector from '../components/UI/VehicleSelector';
 import LocateButton from '../components/UI/LocateButton';
-import LaneGuidance from '../components/UI/LaneGuidance';
+// import LaneGuidance from '../components/UI/LaneGuidance';
 import LocationDetails from '../components/UI/LocationDetails';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -200,7 +200,7 @@ const MapDashboard: React.FC = () => {
             </div>
 
             {/* Lane Guidance Overlay - Mocked to show when route is active */}
-            <LaneGuidance visible={allRoutes.length > 0} />
+            {/* <LaneGuidance visible={allRoutes.length > 0} /> */}
 
             {/* Bottom Right - Layer Toggles */}
             <div className="absolute bottom-20 right-4 md:bottom-8 md:right-4 z-[400] flex flex-col gap-4 items-end">
