@@ -7,7 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { calculateBearing, getDistance } from '../../utils/mapUtils';
 import carIcon from '../../assets/car1.png';
 import bikeIcon from '../../assets/bike1.png';
-import walkingIcon from '../../assets/walking.png';
+import walkingIcon from '../../assets/walking1.png';
 import heavyIcon from '../../assets/heavy1.svg';
 import emergencyIcon from '../../assets/emergency1.svg';
 
