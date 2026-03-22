@@ -10,6 +10,7 @@ import bikeIcon from '../../assets/bike1.png';
 import walkingIcon from '../../assets/walking1.png';
 import heavyIcon from '../../assets/heavy1.svg';
 import emergencyIcon from '../../assets/emergency1.svg';
+import { useSpeedLimit } from '../../hooks/useSpeedLimit';
 
 const UserMarker: React.FC = () => {
     const { userLocation, isNavigating } = useMapContext();
@@ -19,6 +20,9 @@ const UserMarker: React.FC = () => {
     // State for smooth rotation
     const [currentHeading, setCurrentHeading] = useState(0);
     const [prevPosition, setPrevPosition] = useState<{ lat: number, lng: number } | null>(null);
+
+    const { status } = useSpeedLimit(userLocation, user?.vehicleType || 'car');
+    const isOverspeed = status === 'overspeed';
 
     // Update heading based on movement
     useEffect(() => {
@@ -105,7 +109,7 @@ const UserMarker: React.FC = () => {
             case 'walk': // walking
                 iconSrc = walkingIcon;
                 size = 48;
-                rotationOffset = 0;
+                rotationOffset = 180;
                 break;
             default: // car
                 iconSrc = carIcon;
@@ -117,7 +121,7 @@ const UserMarker: React.FC = () => {
             <div className="relative flex items-center justify-center w-full h-full">
                 {/* Pulsing effect underneath */}
                 <div
-                    className="absolute inset-0 rounded-full opacity-20 animate-ping bg-emerald-500/50"
+                    className={`absolute inset-0 rounded-full opacity-20 animate-ping ${isOverspeed ? 'bg-red-500/80' : 'bg-emerald-500/50'}`}
                     style={{ transform: 'scale(0.8)' }}
                 />
 
@@ -145,7 +149,7 @@ const UserMarker: React.FC = () => {
             iconAnchor: [size * 0.75, size * 0.75],
             popupAnchor: [0, -size / 2]
         });
-    }, [user?.vehicleType, displayHeading, isNavigating]);
+    }, [user?.vehicleType, displayHeading, isNavigating, isOverspeed]);
 
 
 

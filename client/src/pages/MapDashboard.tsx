@@ -19,6 +19,8 @@ import { useMapContext } from '../context/MapContext';
 import useHazardAlerts from '../hooks/useHazardAlerts';
 import useNavigationLogic from '../hooks/useNavigationLogic';
 import MapLibreNavigation from '../components/Map/MapLibreNavigation';
+import SpeedDashboard from '../components/Map/SpeedDashboard';
+import { useSpeedLimit } from '../hooks/useSpeedLimit';
 
 const MapDashboard: React.FC = () => {
     const { user } = useAuth();
@@ -44,6 +46,23 @@ const MapDashboard: React.FC = () => {
         distance: 0, // km
         duration: 0  // min
     });
+
+    const speedInfo = useSpeedLimit(userLocation, user?.vehicleType || 'car');
+    
+    // Overspeed alerts
+    useEffect(() => {
+        if (speedInfo.status === 'overspeed') {
+            const msg = `OVERSPEED WARNING: Limit is ${speedInfo.speedLimit} on ${speedInfo.roadType}!`;
+            setAlertMessage(msg);
+            
+            if ('speechSynthesis' in window && !window.speechSynthesis.speaking) {
+                const utterance = new SpeechSynthesisUtterance(msg);
+                window.speechSynthesis.speak(utterance);
+            }
+        } else {
+            setAlertMessage(null); // Clear the alert when safely under the limit
+        }
+    }, [speedInfo.status, speedInfo.speedLimit, speedInfo.roadType]);
 
     // Hooks
     useHazardAlerts({
@@ -184,6 +203,8 @@ const MapDashboard: React.FC = () => {
                     />
                 </MapComponent>
             )}
+
+            <SpeedDashboard />
 
             {alertMessage && <AlertBanner message={alertMessage} type="warning" onClose={() => setAlertMessage(null)} />}
 

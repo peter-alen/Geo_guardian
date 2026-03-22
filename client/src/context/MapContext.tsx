@@ -46,7 +46,7 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // Simulation State
     const [isSimulating, setIsSimulating] = useState(false);
     const [simulationRoute, setSimulationRoute] = useState<[number, number][] | null>(null);
-    const simLocation = useSimulatedLocation(simulationRoute, isSimulating, 30); // 30 km/h default
+    const simLocation = useSimulatedLocation(simulationRoute, isSimulating, 20); // 20 km/h default
 
     const userLocation = isSimulating && simLocation.coordinates
         ? {
@@ -65,6 +65,7 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             : null;
 
     const startSimulation = (route: [number, number][]) => {
+        simLocation.resetSimulation();
         setSimulationRoute(route);
         setIsSimulating(true);
         setIsNavigating(true); // Auto-start nav mode usually

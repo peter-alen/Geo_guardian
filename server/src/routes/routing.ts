@@ -75,7 +75,10 @@ router.post('/calculate', async (req, res) => {
             // or just strictly enforce average speeds for these modes.
             const distanceMeters = osrmRoute.distance;
 
-            if (vehicleType === 'walk') {
+            if (vehicleType === 'emergency') {
+                // Emergency vehicles are extremely fast, overriding traffic defaults: ~100 km/h = 27.78 m/s
+                duration = distanceMeters / 27.78;
+            } else if (vehicleType === 'walk') {
                 // ~5 km/h = 1.39 m/s
                 duration = distanceMeters / 1.39;
             } else if (vehicleType === 'two-wheeler') {

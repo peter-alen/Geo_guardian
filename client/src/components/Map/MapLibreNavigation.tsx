@@ -8,6 +8,7 @@ import bikeIcon from '../../assets/bike1.png';
 import walkingIcon from '../../assets/walking1.png';
 import heavyIcon from '../../assets/heavy1.svg';
 import emergencyIcon from '../../assets/emergency1.svg';
+import { useSpeedLimit } from '../../hooks/useSpeedLimit';
 
 interface MapLibreNavigationProps {
     routeSegments: any[];
@@ -22,6 +23,10 @@ const MapLibreNavigation: React.FC<MapLibreNavigationProps> = ({ routeSegments, 
     const { userLocation, followMode, setFollowMode, isSimulating } = useMapContext();
     const { user } = useAuth();
     const [mapLoaded, setMapLoaded] = useState(false);
+
+    // Speed Tracking
+    const { status } = useSpeedLimit(userLocation, user?.vehicleType || 'car');
+    const isOverspeed = status === 'overspeed';
 
     // 1. Initialize MapLibre
     useEffect(() => {
@@ -156,7 +161,7 @@ const MapLibreNavigation: React.FC<MapLibreNavigationProps> = ({ routeSegments, 
                 break;
             case 'walk':
                 iconSrc = walkingIcon;
-                rotationOffset = 0;
+                rotationOffset = 180;
                 size = 48;
                 break;
             default:
@@ -169,33 +174,52 @@ const MapLibreNavigation: React.FC<MapLibreNavigationProps> = ({ routeSegments, 
         // Marker Update
         if (!markerRef.current) {
             const el = document.createElement('div');
-            el.className = 'vehicle-marker-3d';
+            el.className = 'vehicle-marker-3d relative flex items-center justify-center';
             el.style.width = `${size}px`;
             el.style.height = `${size}px`;
 
-            const img = document.createElement('img');
-            img.src = iconSrc;
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.display = 'block';
-            img.style.transform = `rotate(${rotationOffset}deg)`; // Apply static rotation fix
-            img.alt = "Vehicle";
+            // Background Pulsing for 3D marker
+            const pulse = document.createElement('div');
+            pulse.className = `absolute inset-0 rounded-full opacity-20 animate-ping ${isOverspeed ? 'bg-red-500/80' : 'bg-emerald-500/50'}`;
+            pulse.style.transform = 'scale(0.8)';
+            pulse.id = 'vehicle-pulse';
+            el.appendChild(pulse);
 
-            el.appendChild(img);
+            const imgContainer = document.createElement('div');
+            imgContainer.className = 'relative z-10 transition-transform duration-300 ease-linear w-full h-full';
+            imgContainer.id = 'vehicle-img-container';
+            
+            imgContainer.style.backgroundImage = `url(${iconSrc})`;
+            imgContainer.style.backgroundSize = 'contain';
+            imgContainer.style.backgroundRepeat = 'no-repeat';
+            imgContainer.style.backgroundPosition = 'center';
+            imgContainer.style.transform = `rotate(${rotationOffset}deg)`;
+
+            el.appendChild(imgContainer);
 
             markerRef.current = new maplibregl.Marker({ element: el })
                 .setLngLat([lng, lat])
                 .addTo(map.current);
         } else {
             markerRef.current.setLngLat([lng, lat]);
-            const img = markerRef.current.getElement().querySelector('img');
-            if (img && img.src !== iconSrc && !img.src.endsWith(iconSrc)) {
-                img.src = iconSrc;
+            const imgContainer = markerRef.current.getElement().querySelector('#vehicle-img-container') as HTMLElement;
+            
+            if (imgContainer) {
+                // Ensure URL formatting doesn't falsely trigger a replace by stripping quotes if present
+                const currentBg = imgContainer.style.backgroundImage.replace(/['"]/g, '');
+                const expectedBg = `url(${iconSrc})`.replace(/['"]/g, '');
+                if (currentBg !== expectedBg) {
+                    imgContainer.style.backgroundImage = `url(${iconSrc})`;
+                }
+                imgContainer.style.transform = `rotate(${rotationOffset}deg)`;
             }
-            // Ensure rotation is updated if vehicle type changed (though component remounts usually handle this, safe to update)
-            if (img) {
-                img.style.transform = `rotate(${rotationOffset}deg)`;
+
+            // Update pulse color
+            const pulse = markerRef.current.getElement().querySelector('#vehicle-pulse');
+            if (pulse) {
+                 pulse.className = `absolute inset-0 rounded-full opacity-20 animate-ping ${isOverspeed ? 'bg-red-500/80' : 'bg-emerald-500/50'}`;
             }
+
             // Update size if changed
             const el = markerRef.current.getElement();
             if (el) {
@@ -204,7 +228,7 @@ const MapLibreNavigation: React.FC<MapLibreNavigationProps> = ({ routeSegments, 
             }
         }
 
-    }, [userLocation, mapLoaded, followMode, user?.vehicleType, viewMode]);
+    }, [userLocation, mapLoaded, followMode, user?.vehicleType, viewMode, isOverspeed]);
 
     // 4. Render Route
     useEffect(() => {
